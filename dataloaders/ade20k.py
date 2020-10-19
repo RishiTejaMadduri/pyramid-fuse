@@ -1,5 +1,5 @@
 from base import BaseDataSet, BaseDataLoader
-from utils import palette
+from utils_seg import palette
 import numpy as np
 import os
 import torch

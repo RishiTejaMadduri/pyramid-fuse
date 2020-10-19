@@ -1,5 +1,5 @@
 from base import BaseDataSet, BaseDataLoader
-from utils import palette
+from utils_seg import palette
 from glob import glob
 import numpy as np
 import os

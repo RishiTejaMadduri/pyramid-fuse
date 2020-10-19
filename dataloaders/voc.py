@@ -2,7 +2,7 @@
 # https://github.com/kazuto1011/deeplab-pytorch
 
 from base import BaseDataSet, BaseDataLoader
-from utils import palette
+from utils_seg import palette
 import numpy as np
 import os
 import scipy
