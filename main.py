@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[7]:
+# In[1]:
 
 
 from __future__ import print_function
@@ -9,42 +9,42 @@ import os
 import cv2
 import tqdm
 import json
-import logging
-import argparse
-import numpy as np
-from PIL import Image
-from imageio import imwrite
-from torchvision import transforms
+import math
+import time
+import torch
 import Utils
 import models
-import utils_seg 
-import torch
-import time
-import numpy as np
-from torchvision.utils import make_grid
-from torchvision import transforms
-from utils_seg import transforms as local_transforms
-from base import DataPrefetcher
-from utils_seg.helpers import colorize_mask
-from utils_seg.metrics import eval_metrics, AverageMeter
-from utils_seg.losses import *
-from utils_seg import Logger
-from models.pyramid_fusion import PyFuse
-from dataloaders.voc import VOC
-from tqdm import tqdm
-import dataloaders
-import math
+import logging
 import datetime
-from utils_seg import helpers
-from torch.utils.tensorboard import SummaryWriter
+import argparse
+import utils_seg
+import dataloaders
+import numpy as np
 
+
+from PIL import Image
+from tqdm import tqdm
+from imageio import imwrite
+from utils_seg import Logger
+from utils_seg import helpers
+from utils_seg.losses import *
+from dataloaders.voc import VOC
+from base import DataPrefetcher
+from torchvision import transforms
+from torchvision.utils import make_grid
+from models.pyramid_fusion import PyFuse
+from utils_seg.helpers import colorize_mask
+from torch.utils.tensorboard import SummaryWriter
+from utils_seg import transforms as local_transforms
+from utils_seg.metrics import eval_metrics, AverageMeter
+import pdb
 
 # In[1]:
 
 
 parser = argparse.ArgumentParser(description='BiFuse script for 360 Semantic Segmentation!', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--path', default='', type=str, help='Path of source images')
-parser.add_argument('--batch_size', default= 16, type=int, help='batch size')
+parser.add_argument('--batch_size', default= 1, type=int, help='batch size')
 parser.add_argument('--checkpoint_dir', default=None, type=str, help='Path to the saving .pth model')
 parser.add_argument('--log_dir', default=None, type=str, help='Path to the saving .pth model')
 parser.add_argument('-resume', default=None, type=str, help='Path to the .pth model checkpoint to resume training')
@@ -115,6 +115,7 @@ def main(args):
     logger = Logger()
 
     train_loader = VOC(args.path, args.batch_size, 'train')
+    print(train_loader)
     val_loader = VOC(args.path, args.batch_size, 'val')
     device, available_gpus = get_available_devices(logger, args.n_gpu)
     model = PyFuse(50)
@@ -144,6 +145,8 @@ def main(args):
         transforms.Resize((400, 400)),
         transforms.ToTensor()])
     
+    # train_loader = restore_transform(train_loader)
+    # val_loader = restore_transform(val_loader)
     prefetch = True
     if device ==  torch.device('cpu'): 
         prefetch = False
@@ -182,6 +185,7 @@ def main(args):
     num_classes = args.num_classes
     for epoch in range(start_epoch, epoch+1):
         # RUN TRAIN (AND VAL)
+        pdb.set_trace()
         results = _train_epoch(model,epoch, num_classes, train_loader, logger, writer, optimizer)
         if do_validation and epoch % args.val_per_epoch == 0:
             results = _valid_epoch(model, epoch)
@@ -288,8 +292,8 @@ def _train_epoch(model,epoch, num_classes, train_loader, logger, writer, optimiz
         # LOSS & OPTIMIZE
         optimizer.zero_grad()
         output = model(data)
-        assert output[0].size()[2:] == target.size()[1:]
-        assert output[0].size()[1] == num_classes 
+#         assert output[0].size()[2:] == target.size()[1:]
+#         assert output[0].size()[1] == num_classes 
         loss = loss(output[0], target)
         loss += loss(output[1], target) * 0.4
         output = output[0]
