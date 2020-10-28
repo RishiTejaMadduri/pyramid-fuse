@@ -31,6 +31,7 @@ class VOCDataset(BaseDataSet):
         self.files = [line.rstrip() for line in tuple(open(file_list, "r"))]
     
     def _load_data(self, index):
+        #print("Inside VOCdataset")
         image_id = self.files[index]
         image_path = os.path.join(self.image_dir, image_id + '.jpg')
         label_path = os.path.join(self.label_dir, image_id + '.png')
@@ -63,13 +64,15 @@ class VOCAugDataset(BaseDataSet):
         image_path = os.path.join(self.root, self.files[index][1:])
         label_path = os.path.join(self.root, self.labels[index][1:])
         image = np.asarray(Image.open(image_path), dtype=np.float32)
+        if image.shape[0] == 281:
+        	image.reshape
         label = np.asarray(Image.open(label_path), dtype=np.int32)
         image_id = self.files[index].split("/")[-1].split(".")[0]
         return image, label, image_id
 
 
 class VOC(BaseDataLoader):
-    def __init__(self, data_dir, batch_size, split, crop_size=None, base_size=None, scale=True, num_workers=1, val=False,
+    def __init__(self, data_dir, batch_size, split, crop_size=None, base_size=None, scale=True, num_workers=0, val=False,
                     shuffle=False, flip=False, rotate=False, blur= False, augment=False, val_split= None, return_id=False):
         
         self.MEAN = [0.45734706, 0.43338275, 0.40058118]
@@ -94,6 +97,7 @@ class VOC(BaseDataLoader):
         if split in ["train_aug", "trainval_aug", "val_aug", "test_aug"]:
             self.dataset = VOCAugDataset(**kwargs)
         elif split in ["train", "trainval", "val", "test"]:
+            #print("Inside VOC")
             self.dataset = VOCDataset(**kwargs)
         else: raise ValueError(f"Invalid split name {split}")
         super(VOC, self).__init__(self.dataset, batch_size, shuffle, num_workers, val_split)

@@ -5,13 +5,13 @@ from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 
 class BaseDataLoader(DataLoader):
-    def __init__(self, dataset, batch_size, shuffle, num_workers=8, val_split = 0.0):
+    def __init__(self, dataset, batch_size, shuffle, num_workers=0, val_split = 0.0):
         self.shuffle = shuffle
         self.dataset = dataset
         self.nbr_examples = len(dataset)
         if val_split: self.train_sampler, self.val_sampler = self._split_sampler(val_split)
         else: self.train_sampler, self.val_sampler = None, None
-
+        #print("Inside Base Dataloader")
         self.init_kwargs = {
             'dataset': self.dataset,
             'batch_size': batch_size,
@@ -20,6 +20,7 @@ class BaseDataLoader(DataLoader):
             'pin_memory': True
         }
         super(BaseDataLoader, self).__init__(sampler=self.train_sampler, **self.init_kwargs)
+
 
     def _split_sampler(self, split):
         if split == 0.0:
@@ -72,6 +73,7 @@ class DataPrefetcher(object):
 
     def __iter__(self):
         count = 0
+        #print("Inside data_prefetcher")
         self.loaditer = iter(self.loader)
         self.preload()
         while self.next_input is not None:

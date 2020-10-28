@@ -28,7 +28,8 @@ from imageio import imwrite
 from utils_seg import Logger
 from utils_seg import helpers
 from utils_seg.losses import *
-from dataloaders.voc import VOC
+# from dataloaders.voc import VOC
+from dataloaders.pvoc import pascalVOCLoader
 from base import DataPrefetcher
 from torchvision import transforms
 from torchvision.utils import make_grid
@@ -44,7 +45,7 @@ import pdb
 
 parser = argparse.ArgumentParser(description='BiFuse script for 360 Semantic Segmentation!', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--path', default='', type=str, help='Path of source images')
-parser.add_argument('--batch_size', default= 1, type=int, help='batch size')
+parser.add_argument('--batch_size', default= 16, type=int, help='batch size')
 parser.add_argument('--checkpoint_dir', default=None, type=str, help='Path to the saving .pth model')
 parser.add_argument('--log_dir', default=None, type=str, help='Path to the saving .pth model')
 parser.add_argument('-resume', default=None, type=str, help='Path to the .pth model checkpoint to resume training')
@@ -95,7 +96,7 @@ args = parser.parse_args()
 def get_available_devices(logger, n_gpu):
     sys_gpu = torch.cuda.device_count()
     if sys_gpu == 0:
-        logger.warning('No GPUs detected, using the CPU')
+#         logger.warning('No GPUs detected, using the CPU')
         n_gpu = 0
     elif n_gpu > sys_gpu:
         logger.warning(f'Nbr of GPU requested is {n_gpu} but only {sys_gpu} are available')
@@ -109,14 +110,14 @@ def get_available_devices(logger, n_gpu):
 
 # In[1]:
 
-
 def main(args):
     
     logger = Logger()
-
-    train_loader = VOC(args.path, args.batch_size, 'train')
+#     train_loader = VOC(args.path, args.batch_size, 'train')
+    train_loader = pascalVOCLoader(args.path, "train")
     print(train_loader)
-    val_loader = VOC(args.path, args.batch_size, 'val')
+#     val_loader = VOC(args.path, args.batch_size, 'val')
+    train_loader = pascalVOCLoader(args.path, "val")
     device, available_gpus = get_available_devices(logger, args.n_gpu)
     model = PyFuse(50)
 #     print(f'\n{model}\n')
@@ -138,21 +139,21 @@ def main(args):
        
         
 #     TRANSORMS FOR VISUALIZATION
-    restore_transform = transforms.Compose([
-        local_transforms.DeNormalize(train_loader.MEAN, train_loader.STD),
-        transforms.ToPILImage()])
-    viz_transform = transforms.Compose([
-        transforms.Resize((400, 400)),
-        transforms.ToTensor()])
+#     restore_transform = transforms.Compose([
+#         local_transforms.DeNormalize(train_loader.MEAN, train_loader.STD),
+#         transforms.ToPILImage()])
+#     viz_transform = transforms.Compose([
+#         transforms.Resize((400, 400)),
+#         transforms.ToTensor()])
     
-    # train_loader = restore_transform(train_loader)
-    # val_loader = restore_transform(val_loader)
-    prefetch = True
-    if device ==  torch.device('cpu'): 
-        prefetch = False
-    if prefetch:
-        train_loader = DataPrefetcher(train_loader, device=device)
-        val_loader = DataPrefetcher(val_loader, device=device)
+#     train_loader = restore_transform(train_loader)
+#     val_loader = restore_transform(val_loader)
+#     prefetch = True
+#     if device ==  torch.device('cpu'): 
+#         prefetch = False
+#     if prefetch:
+#         train_loader = DataPrefetcher(train_loader, device=device)
+#         val_loader = DataPrefetcher(val_loader, device=device)
 
     torch.backends.cudnn.benchmark = True
     
@@ -185,7 +186,7 @@ def main(args):
     num_classes = args.num_classes
     for epoch in range(start_epoch, epoch+1):
         # RUN TRAIN (AND VAL)
-        pdb.set_trace()
+        #pdb.set_trace()
         results = _train_epoch(model,epoch, num_classes, train_loader, logger, writer, optimizer)
         if do_validation and epoch % args.val_per_epoch == 0:
             results = _valid_epoch(model, epoch)
@@ -283,9 +284,9 @@ def _train_epoch(model,epoch, num_classes, train_loader, logger, writer, optimiz
     tic = time.time()
     _reset_metrics()
     tbar = tqdm(train_loader, ncols=130)
-
+    date_time = datetime.date.today()
     for batch_idx, (data, target) in enumerate(tbar):
-        data_time.update(time.time() - tic)
+        #data_time.update(time.time() - tic)
         #data, target = data.to(self.device), target.to(self.device)
         lr_scheduler.step(epoch=epoch-1)
 

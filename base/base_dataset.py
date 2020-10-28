@@ -28,7 +28,7 @@ class BaseDataSet(Dataset):
         self.to_tensor = transforms.ToTensor()
         self.normalize = transforms.Normalize(mean, std)
         self.return_id = return_id
-
+        print("Inside Base dataset")
         cv2.setNumThreads(0)
 
     def _set_files(self):
