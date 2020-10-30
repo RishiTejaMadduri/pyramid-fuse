@@ -377,12 +377,14 @@ class CETransform(nn.Module):
             self.c2e['(%d)' % (h)] = a
 
     def E2C(self, x):
+        print(x.shape)
         [bs, c, h, w] = x.shape
         key = '(%d,%d)' % (h, w)
         assert key in self.e2c
         return self.e2c[key].ToCubeTensor(x)
 
     def C2E(self, x):
+        print(x.shape)
         [bs, c, h, w] = x.shape
         key = '(%d)' % (h)
         assert key in self.c2e and h == w
@@ -525,7 +527,7 @@ class PyFuse(nn.Module):
         self.grid = Utils.Equirec2Cube(None, 512, 1024, 256, 90).GetGrid()
 
 #Forwarard for FCRN
-    def forward_FCRN_fusion(self, equi, fusion=False):
+    def forward(self, equi, fusion=False):
 #going from E2C
         cube = self.ce.E2C(equi)
 #Applying the pre-processing block to deal with distortion

@@ -20,7 +20,7 @@ import argparse
 import utils_seg
 import dataloaders
 import numpy as np
-
+import torch.optim
 
 from PIL import Image
 from tqdm import tqdm
@@ -29,7 +29,7 @@ from utils_seg import Logger
 from utils_seg import helpers
 from utils_seg.losses import *
 # from dataloaders.voc import VOC
-from dataloaders.pvoc import pascalVOCLoader
+from dataloaders.voc1 import VOC
 from base import DataPrefetcher
 from torchvision import transforms
 from torchvision.utils import make_grid
@@ -114,10 +114,10 @@ def main(args):
     
     logger = Logger()
 #     train_loader = VOC(args.path, args.batch_size, 'train')
-    train_loader = pascalVOCLoader(args.path, "train")
+    train_loader = VOC("train")
     print(train_loader)
 #     val_loader = VOC(args.path, args.batch_size, 'val')
-    train_loader = pascalVOCLoader(args.path, "val")
+    val_loader = VOC("val")
     device, available_gpus = get_available_devices(logger, args.n_gpu)
     model = PyFuse(50)
 #     print(f'\n{model}\n')
@@ -288,7 +288,7 @@ def _train_epoch(model,epoch, num_classes, train_loader, logger, writer, optimiz
     for batch_idx, (data, target) in enumerate(tbar):
         #data_time.update(time.time() - tic)
         #data, target = data.to(self.device), target.to(self.device)
-        lr_scheduler.step(epoch=epoch-1)
+#         lr_scheduler.step(epoch=epoch-1)
 
         # LOSS & OPTIMIZE
         optimizer.zero_grad()

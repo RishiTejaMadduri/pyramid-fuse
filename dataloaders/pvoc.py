@@ -84,6 +84,7 @@ class pascalVOCLoader(data.Dataset):
         im_path = pjoin(self.root, "JPEGImages", im_name + ".jpg")
         lbl_path = pjoin(self.root, "SegmentationClass/", im_name + ".png")
         im = Image.open(im_path)
+        print("Image shape: ", im.size)
         lbl = Image.open(lbl_path)
         if self.augmentations is not None:
             im, lbl = self.augmentations(im, lbl)
