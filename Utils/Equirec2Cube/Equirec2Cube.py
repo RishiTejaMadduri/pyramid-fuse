@@ -105,7 +105,7 @@ class Equirec2Cube:
             self.grid_lst.append(grid)
 
     def _ToCube(self, batch, mode):
-        batch_size = batch.size()[0]
+        batch_size = batch.shape[0]
         #if batch_size != self.batch_size:
         #    print('Batch error! Expect to have {} but got {}'.format(self.batch_size, batch_size))
 
@@ -138,7 +138,7 @@ class Equirec2Cube:
 
     def ToCubeTensor(self, batch, mode='bilinear'):
         assert mode in ['bilinear', 'nearest']
-        batch_size = batch.size()[0]
+        batch_size = batch.shape[0]
         cube = self._ToCube(batch, mode=mode)
         out_batch = None
         for batch_idx in range(batch_size):

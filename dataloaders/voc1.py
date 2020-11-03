@@ -84,6 +84,7 @@ class VOC(data.Dataset):
         img = cv.resize(img, dsize=(512, 1024), interpolation=cv.INTER_CUBIC)
         img=img.transpose(2,1,0)
         img=np.expand_dims(img,0)
+        img = torch.tensor(img)
         if self.mode == 'train':
             mask = np.asarray(Image.open(mask_path), dtype=np.int32)
             #mask = Image.fromarray(mask.astype(np.uint8))
