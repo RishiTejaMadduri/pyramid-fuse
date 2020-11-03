@@ -4,6 +4,7 @@ import scipy.io as sio
 import torch
 from PIL import Image
 from torch.utils import data
+import cv2 as cv
 
 num_classes = 21
 ignore_label = 255
@@ -80,7 +81,9 @@ class VOC(data.Dataset):
 
         img_path, mask_path = self.imgs[index]
         img = np.asarray(Image.open(img_path), dtype=np.float32)
-        print(img.size)
+        img = cv.resize(img, dsize=(512, 1024), interpolation=cv.INTER_CUBIC)
+        img=img.transpose(2,1,0)
+        img=np.expand_dims(img,0)
         if self.mode == 'train':
             mask = np.asarray(Image.open(mask_path), dtype=np.int32)
             #mask = Image.fromarray(mask.astype(np.uint8))
