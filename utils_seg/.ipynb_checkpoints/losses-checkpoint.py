@@ -25,8 +25,10 @@ class CrossEntropyLoss2d(nn.Module):
     def __init__(self, weight=None, ignore_index=255, reduction='mean'):
         super(CrossEntropyLoss2d, self).__init__()
         self.CE =  nn.CrossEntropyLoss(weight=weight, ignore_index=ignore_index, reduction=reduction)
-
+        print("INIT")
     def forward(self, output, target):
+        print("Output shape : ", output.shape)
+        print("Target Shape : ", target.shape)
         loss = self.CE(output, target)
         return loss
 
@@ -87,5 +89,3 @@ class LovaszSoftmax(nn.Module):
         logits = F.softmax(output, dim=1)
         loss = lovasz_softmax(logits, target, ignore=self.ignore_index)
         return loss
-
-
