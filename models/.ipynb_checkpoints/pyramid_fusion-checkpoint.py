@@ -375,7 +375,11 @@ class CETransform(nn.Module):
         return self.e2c[key].ToCubeTensor(x)
 
     def C2E(self, x):
+<<<<<<< HEAD
         [bs, c, h, w] = x.shape
+=======
+        [bs, c, h, w] = x[0].shape
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
         key = '(%d)' % (h)
         assert key in self.c2e and h == w
         return self.c2e[key].ToEquirecTensor(x)
@@ -389,7 +393,11 @@ class Refine(nn.Module):
     def __init__(self):
         super(Refine, self).__init__()
         self.refine_1 = nn.Sequential(
+<<<<<<< HEAD
                         nn.Conv2d(42, 32, kernel_size=3, stride=1, padding=1, bias=False),
+=======
+                        nn.Conv2d(5, 32, kernel_size=3, stride=1, padding=1, bias=False),
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
                         nn.BatchNorm2d(32),
                         nn.ReLU(inplace=True),
                         nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1, bias=False),
@@ -418,6 +426,7 @@ class Refine(nn.Module):
                         nn.LeakyReLU(inplace=True),
                         )
         self.refine_3 = nn.Sequential(
+<<<<<<< HEAD
                         nn.Conv2d(96, 32, kernel_size=3, stride=1, padding=1, bias=False),
                         nn.BatchNorm2d(32),
                         nn.ReLU(inplace=True),
@@ -450,6 +459,24 @@ class Refine(nn.Module):
         
         out_3 = self.refine_3(torch.cat((deconv_out2, up_2), dim = 1))
         print("out_3_Shape: ", out_3.shape)
+=======
+                        nn.Conv2d(96, 16, kernel_size=3, stride=1, padding=1, bias=False),
+                        nn.BatchNorm2d(16),
+                        nn.ReLU(inplace=True),
+                        nn.Conv2d(16, 1, kernel_size=3, stride=1, padding=1, bias=False)
+                        )
+        self.bilinear_1 = nn.UpsamplingBilinear2d(size=(256,512))
+        self.bilinear_2 = nn.UpsamplingBilinear2d(size=(512,1024))
+    def forward(self, inputs):
+        x = inputs
+        out_1 = self.refine_1(x)
+        out_2 = self.refine_2(out_1)
+        deconv_out1 = self.deconv_1(out_2)
+        up_1 = self.bilinear_1(out_2)
+        deconv_out2 = self.deconv_2(torch.cat((deconv_out1, up_1), dim = 1))
+        up_2 = self.bilinear_2(out_1)
+        out_3 = self.refine_3(torch.cat((deconv_out2, up_2), dim = 1))
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
 
         return out_3  
 
@@ -537,11 +564,14 @@ class PyFuse(nn.Module):
         feat_equi = self.equi_model.pre_encoder2(equi)
 #Check this one out
         feat_cube = self.cube_model.pre_encoder(cube)
+<<<<<<< HEAD
         print("Equi_shape: ", equi.shape)
         print("Pyramid encoder input-Equi:", feat_equi.shape)
         print("Pyramid encoder input-Cube:", feat_cube.shape)
         
 
+=======
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
 #Running the encoder block
         for e in range(5):
             if fusion:
@@ -565,6 +595,7 @@ class PyFuse(nn.Module):
                 feat_equi = self.equi_model.conv2(feat_equi)
                 feat_cube = self.cube_model.bn2(feat_cube)
                 feat_equi = self.equi_model.bn2(feat_equi)
+<<<<<<< HEAD
                 
         print("Pyramid encoder exit-Equi:", feat_equi.shape)
         print("Pyramid encoder exit-Cube:", feat_cube.shape)
@@ -584,7 +615,29 @@ class PyFuse(nn.Module):
         print("C2E-Cube: ", feat_cube.shape)
         print("Cat: ", feat_cat.shape)
         
+=======
+
+        feat_equi = self.equi_psp(feat_equi)
+#         feat_equi = torch.stack(feat_equi[0]+feat_equi[1])
+        print(feat_equi[0].shape)
+        print(feat_equi[1].shape)
+        feat_cube = self.cube_psp(feat_cube)
+        print(feat_cube[0].shape)
+        print(feat_cube[1].shape)
+        feat_cube = self.ce.C2E(feat_cube)
+        feat_cat = torch.cat((feat_equi, feat_cube), dim = 1)
+        
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
         refine_final = self.refine_model(feat_cat)
         
         return refine_final
 
+<<<<<<< HEAD
+=======
+
+# %%
+
+
+
+
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350

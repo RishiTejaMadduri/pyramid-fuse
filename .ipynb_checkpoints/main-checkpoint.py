@@ -55,7 +55,11 @@ parser.add_argument('--log_dir', default=None, type=str, help='Path to the savin
 parser.add_argument('-resume', default=None, type=str, help='Path to the .pth model checkpoint to resume training')
 parser.add_argument('--d', default=None, type=str, help='indices of GPUs to enable (default: all)')
 parser.add_argument('--val', default = True, type = bool, help = 'Perform validation or not')
+<<<<<<< HEAD
 parser.add_argument('--epoch', default = 10, type = int, help = 'No of epochs')
+=======
+parser.add_argument('--epoch', default = 100, type = int, help = 'No of epochs')
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
 parser.add_argument('--momentum', default = 0.99, type = float, help = 'Momentum')
 parser.add_argument('--beta', default = 0.01, type = float, help = 'Beta')
 parser.add_argument('--weight_decay', default = 10e-5, type = float,help = 'weight_decay')
@@ -127,7 +131,11 @@ def main(args):
 #     print(f'\n{model}\n')
     model = torch.nn.DataParallel(model, available_gpus)
     model.to(device)
+<<<<<<< HEAD
     loss = FocalLoss()
+=======
+    loss = CrossEntropyLoss2d()
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
     print(loss)
     # OPTIMIZER
     optim_params = [
@@ -191,7 +199,11 @@ def main(args):
     for epoch in range(start_epoch, epoch+1):
         # RUN TRAIN (AND VAL)
         #pdb.set_trace()
+<<<<<<< HEAD
         results = _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer, loss)
+=======
+        results = _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer)
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
         if do_validation and epoch % args.val_per_epoch == 0:
             results = _valid_epoch(model, epoch)
 
@@ -279,8 +291,14 @@ def _resume_checkpoint(resume_path):
 # %%
 
 
+<<<<<<< HEAD
 def _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer, loss):
 #     logger.info('\n')
+=======
+def _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer):
+#     logger.info('\n')
+
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
     model.train()
     wrt_mode = 'train'
 
@@ -296,6 +314,7 @@ def _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer, loss
         # LOSS & OPTIMIZE
         optimizer.zero_grad()
         output = model(data)
+<<<<<<< HEAD
         print(batch_idx)
         assert output.size()[2:] == target.size()[1:]
         assert output.size()[1] == num_classes 
@@ -313,6 +332,19 @@ def _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer, loss
         Loss.backward()
         optimizer.step()
         total_Loss.update(Loss.item())
+=======
+#         assert output[0].size()[2:] == target.size()[1:]
+#         assert output[0].size()[1] == num_classes 
+        loss = loss(output[0], target)
+        loss += loss(output[1], target) * 0.4
+        output = output[0]
+
+        if isinstance(loss, torch.nn.DataParallel):
+            loss = loss.mean()
+        loss.backward()
+        optimizer.step()
+        total_loss.update(loss.item())
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
 
         # measure elapsed time
         batch_time.update(time.time() - tic)
@@ -438,6 +470,11 @@ def _get_seg_metrics(total_correct, total_label, total_inter, total_union):
 
 
 # %%
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
 if __name__ == '__main__':
     main(args)
 

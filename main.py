@@ -191,7 +191,11 @@ def main(args):
     for epoch in range(start_epoch, epoch+1):
         # RUN TRAIN (AND VAL)
         #pdb.set_trace()
+<<<<<<< HEAD
         results = _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer, loss)
+=======
+        results = _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer)
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
         if do_validation and epoch % args.val_per_epoch == 0:
             results = _valid_epoch(model, epoch)
 
@@ -279,7 +283,11 @@ def _resume_checkpoint(resume_path):
 # %%
 
 
+<<<<<<< HEAD
 def _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer, loss):
+=======
+def _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer):
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
 #     logger.info('\n')
     model.train()
     wrt_mode = 'train'
@@ -438,6 +446,11 @@ def _get_seg_metrics(total_correct, total_label, total_inter, total_union):
 
 
 # %%
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
 if __name__ == '__main__':
     main(args)
 

@@ -375,7 +375,11 @@ class CETransform(nn.Module):
         return self.e2c[key].ToCubeTensor(x)
 
     def C2E(self, x):
+<<<<<<< HEAD
         [bs, c, h, w] = x.shape
+=======
+        [bs, c, h, w] = x[0].shape
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
         key = '(%d)' % (h)
         assert key in self.c2e and h == w
         return self.c2e[key].ToEquirecTensor(x)
@@ -565,6 +569,7 @@ class PyFuse(nn.Module):
                 feat_equi = self.equi_model.conv2(feat_equi)
                 feat_cube = self.cube_model.bn2(feat_cube)
                 feat_equi = self.equi_model.bn2(feat_equi)
+<<<<<<< HEAD
                 
         print("Pyramid encoder exit-Equi:", feat_equi.shape)
         print("Pyramid encoder exit-Cube:", feat_cube.shape)
@@ -577,6 +582,16 @@ class PyFuse(nn.Module):
         print("Pyramid decoder exit-Equi:", feat_equi.shape)
         print("Pyramid decoder exit-Cube:", feat_cube.shape)
         
+=======
+
+        feat_equi = self.equi_psp(feat_equi)
+#         feat_equi = torch.stack(feat_equi[0]+feat_equi[1])
+        print(feat_equi[0].shape)
+        print(feat_equi[1].shape)
+        feat_cube = self.cube_psp(feat_cube)
+        print(feat_cube[0].shape)
+        print(feat_cube[1].shape)
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
         feat_cube = self.ce.C2E(feat_cube)
         feat_cat = torch.cat((feat_equi, feat_cube), dim = 1)
         
@@ -588,3 +603,12 @@ class PyFuse(nn.Module):
         
         return refine_final
 
+<<<<<<< HEAD
+=======
+
+# %%
+
+
+
+
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350

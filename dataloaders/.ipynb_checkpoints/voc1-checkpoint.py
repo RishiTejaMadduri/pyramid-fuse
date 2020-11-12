@@ -86,6 +86,7 @@ class VOC(data.Dataset):
         img=np.expand_dims(img,0)
         img = torch.tensor(img)
         if self.mode == 'train':
+<<<<<<< HEAD
             mask = np.asarray(Image.open(mask_path), dtype=np.float32)
             mask = cv.resize(mask, dsize = (256,128))
             mask = np.expand_dims(mask,0)
@@ -95,6 +96,12 @@ class VOC(data.Dataset):
             mask = Image.open(mask_path)
             mask = cv.resize(mask, dsize = (256,128))
             mask = torch.tensor(mask)
+=======
+            mask = np.asarray(Image.open(mask_path), dtype=np.int32)
+            #mask = Image.fromarray(mask.astype(np.uint8))
+        else:
+            mask = Image.open(mask_path)
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
 
         if self.joint_transform is not None:
             img, mask = self.joint_transform(img, mask)
