@@ -87,7 +87,11 @@ class VOC(data.Dataset):
         img = torch.tensor(img)
         if self.mode == 'train':
             mask = np.asarray(Image.open(mask_path), dtype=np.float32)
+<<<<<<< HEAD
             mask = cv.resize(mask, dsize = (256,128), interpolation = cv.INTER_NEAREST)
+=======
+            mask = cv.resize(mask, dsize = (256,128))
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
             mask = np.expand_dims(mask,0)
             mask = torch.tensor(mask)
             #mask = Image.fromarray(mask.astype(np.uint8))

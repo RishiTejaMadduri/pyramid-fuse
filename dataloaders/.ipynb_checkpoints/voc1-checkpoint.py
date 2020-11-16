@@ -81,13 +81,23 @@ class VOC(data.Dataset):
 
         img_path, mask_path = self.imgs[index]
         img = np.asarray(Image.open(img_path), dtype=np.float32)
+<<<<<<< HEAD
         img = cv.resize(img, dsize=(512, 1024), interpolation=cv.INTER_NEAREST)
+=======
+        img = cv.resize(img, dsize=(512, 1024), interpolation=cv.INTER_CUBIC)
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
         img=img.transpose(2,1,0)
         img=np.expand_dims(img,0)
         img = torch.tensor(img)
         if self.mode == 'train':
+<<<<<<< HEAD
             mask = np.asarray(Image.open(mask_path), dtype=np.float32)
             mask = cv.resize(mask, dsize = (256,128), interpolation = cv.INTER_NEAREST)
+=======
+<<<<<<< HEAD
+            mask = np.asarray(Image.open(mask_path), dtype=np.float32)
+            mask = cv.resize(mask, dsize = (256,128))
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
             mask = np.expand_dims(mask,0)
             mask = torch.tensor(mask)
             #mask = Image.fromarray(mask.astype(np.uint8))
@@ -95,6 +105,15 @@ class VOC(data.Dataset):
             mask = Image.open(mask_path)
             mask = cv.resize(mask, dsize = (256,128))
             mask = torch.tensor(mask)
+<<<<<<< HEAD
+=======
+=======
+            mask = np.asarray(Image.open(mask_path), dtype=np.int32)
+            #mask = Image.fromarray(mask.astype(np.uint8))
+        else:
+            mask = Image.open(mask_path)
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
 
         if self.joint_transform is not None:
             img, mask = self.joint_transform(img, mask)

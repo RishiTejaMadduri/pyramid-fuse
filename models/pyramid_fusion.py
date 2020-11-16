@@ -375,7 +375,14 @@ class CETransform(nn.Module):
         return self.e2c[key].ToCubeTensor(x)
 
     def C2E(self, x):
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
         [bs, c, h, w] = x.shape
+=======
+        [bs, c, h, w] = x[0].shape
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
         key = '(%d)' % (h)
         assert key in self.c2e and h == w
         return self.c2e[key].ToEquirecTensor(x)
@@ -427,6 +434,7 @@ class Refine(nn.Module):
         self.bilinear_2 = nn.UpsamplingBilinear2d(size=(128,256))
     def forward(self, inputs):
         x = inputs
+<<<<<<< HEAD
 #         print("\n Entering Refine Model \n")
 #         print("X_Shape: ", x.shape)
         
@@ -450,6 +458,31 @@ class Refine(nn.Module):
         
         out_3 = self.refine_3(torch.cat((deconv_out2, up_2), dim = 1))
 #         print("out_3_Shape: ", out_3.shape)
+=======
+        print("\n Entering Refine Model \n")
+        print("X_Shape: ", x.shape)
+        
+        out_1 = self.refine_1(x)
+        print("out_1_Shape: ", out_1.shape)
+        
+        out_2 = self.refine_2(out_1)
+        print("Out_2_Shape: ", out_2.shape)
+        
+        deconv_out1 = self.deconv_1(out_2)
+        print("Deconv_out1_Shape: ", deconv_out1.shape)
+        
+        up_1 = self.bilinear_1(out_2)
+        print("up1_Shape: ", up_1.shape)
+        
+        deconv_out2 = self.deconv_2(torch.cat((deconv_out1, up_1), dim = 1))
+        print("Deconv_out2_Shape: ", deconv_out2.shape)
+        
+        up_2 = self.bilinear_2(out_1)
+        print("Up_2_Shape: ", up_2.shape)
+        
+        out_3 = self.refine_3(torch.cat((deconv_out2, up_2), dim = 1))
+        print("out_3_Shape: ", out_3.shape)
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
 
         return out_3  
 
@@ -537,9 +570,15 @@ class PyFuse(nn.Module):
         feat_equi = self.equi_model.pre_encoder2(equi)
 #Check this one out
         feat_cube = self.cube_model.pre_encoder(cube)
+<<<<<<< HEAD
 #         print("Equi_shape: ", equi.shape)
 #         print("Pyramid encoder input-Equi:", feat_equi.shape)
 #         print("Pyramid encoder input-Cube:", feat_cube.shape)
+=======
+        print("Equi_shape: ", equi.shape)
+        print("Pyramid encoder input-Equi:", feat_equi.shape)
+        print("Pyramid encoder input-Cube:", feat_cube.shape)
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
         
 
 #Running the encoder block
@@ -565,15 +604,23 @@ class PyFuse(nn.Module):
                 feat_equi = self.equi_model.conv2(feat_equi)
                 feat_cube = self.cube_model.bn2(feat_cube)
                 feat_equi = self.equi_model.bn2(feat_equi)
+<<<<<<< HEAD
                 
 #         print("Pyramid encoder exit-Equi:", feat_equi.shape)
 #         print("Pyramid encoder exit-Cube:", feat_cube.shape)
+=======
+<<<<<<< HEAD
+                
+        print("Pyramid encoder exit-Equi:", feat_equi.shape)
+        print("Pyramid encoder exit-Cube:", feat_cube.shape)
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
         
         feat_equi = self.equi_psp(feat_equi)
         feat_equi = feat_equi[0]
         feat_cube = self.cube_psp(feat_cube)
         feat_cube = feat_cube[0]
          
+<<<<<<< HEAD
 #         print("Pyramid decoder exit-Equi:", feat_equi.shape)
 #         print("Pyramid decoder exit-Cube:", feat_cube.shape)
         
@@ -583,8 +630,41 @@ class PyFuse(nn.Module):
 #         print("\n C2E and Cat shapes \n")
 #         print("C2E-Cube: ", feat_cube.shape)
 #         print("Cat: ", feat_cat.shape)
+=======
+        print("Pyramid decoder exit-Equi:", feat_equi.shape)
+        print("Pyramid decoder exit-Cube:", feat_cube.shape)
+        
+=======
+
+        feat_equi = self.equi_psp(feat_equi)
+#         feat_equi = torch.stack(feat_equi[0]+feat_equi[1])
+        print(feat_equi[0].shape)
+        print(feat_equi[1].shape)
+        feat_cube = self.cube_psp(feat_cube)
+        print(feat_cube[0].shape)
+        print(feat_cube[1].shape)
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
+        feat_cube = self.ce.C2E(feat_cube)
+        feat_cat = torch.cat((feat_equi, feat_cube), dim = 1)
+        
+        print("\n C2E and Cat shapes \n")
+        print("C2E-Cube: ", feat_cube.shape)
+        print("Cat: ", feat_cat.shape)
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
         
         refine_final = self.refine_model(feat_cat)
         
         return refine_final
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+
+# %%
+
+
+
+
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6

@@ -55,7 +55,15 @@ parser.add_argument('--log_dir', default=None, type=str, help='Path to the savin
 parser.add_argument('-resume', default=None, type=str, help='Path to the .pth model checkpoint to resume training')
 parser.add_argument('--d', default=None, type=str, help='indices of GPUs to enable (default: all)')
 parser.add_argument('--val', default = True, type = bool, help = 'Perform validation or not')
+<<<<<<< HEAD
 parser.add_argument('--epoch', default = 10, type = int, help = 'No of epochs')
+=======
+<<<<<<< HEAD
+parser.add_argument('--epoch', default = 10, type = int, help = 'No of epochs')
+=======
+parser.add_argument('--epoch', default = 100, type = int, help = 'No of epochs')
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
 parser.add_argument('--momentum', default = 0.99, type = float, help = 'Momentum')
 parser.add_argument('--beta', default = 0.01, type = float, help = 'Beta')
 parser.add_argument('--weight_decay', default = 10e-5, type = float,help = 'weight_decay')
@@ -127,7 +135,15 @@ def main(args):
 #     print(f'\n{model}\n')
     model = torch.nn.DataParallel(model, available_gpus)
     model.to(device)
+<<<<<<< HEAD
     loss = FocalLoss()
+=======
+<<<<<<< HEAD
+    loss = FocalLoss()
+=======
+    loss = CrossEntropyLoss2d()
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
     print(loss)
     # OPTIMIZER
     optim_params = [
@@ -191,7 +207,15 @@ def main(args):
     for epoch in range(start_epoch, epoch+1):
         # RUN TRAIN (AND VAL)
         #pdb.set_trace()
+<<<<<<< HEAD
         results = _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer, loss)
+=======
+<<<<<<< HEAD
+        results = _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer, loss)
+=======
+        results = _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer)
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
         if do_validation and epoch % args.val_per_epoch == 0:
             results = _valid_epoch(model, epoch)
 
@@ -277,6 +301,7 @@ def _resume_checkpoint(resume_path):
 
 
 # %%
+<<<<<<< HEAD
 def _reset_metrics():
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -288,10 +313,23 @@ def _reset_metrics():
 # %%
 def _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer, loss):
 #     logger.info('\n')
+=======
+
+
+<<<<<<< HEAD
+def _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer, loss):
+#     logger.info('\n')
+=======
+def _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer):
+#     logger.info('\n')
+
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
     model.train()
     wrt_mode = 'train'
 
     tic = time.time()
+<<<<<<< HEAD
 #     _reset_metrics()
 
     batch_time = AverageMeter()
@@ -305,11 +343,20 @@ def _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer, loss
     for batch_idx, (data, target) in enumerate(tbar):
         data_time.update(time.time() - tic)
 #         data, target = data.to(self.device), target.to(self.device)
+=======
+    _reset_metrics()
+    tbar = tqdm(train_loader, ncols=130)
+    date_time = datetime.date.today()
+    for batch_idx, (data, target) in enumerate(tbar):
+        #data_time.update(time.time() - tic)
+        #data, target = data.to(self.device), target.to(self.device)
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
 #         lr_scheduler.step(epoch=epoch-1)
 
         # LOSS & OPTIMIZE
         optimizer.zero_grad()
         output = model(data)
+<<<<<<< HEAD
         print(batch_idx)
         assert output.size()[2:] == target.size()[1:]
         assert output.size()[1] == num_classes 
@@ -318,6 +365,17 @@ def _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer, loss
         print("Loss Fn Output Size: ", output.shape)
         print("Loss Fn Target Size: ", target.shape)
 #         pdb.set_trace()
+=======
+<<<<<<< HEAD
+        print(batch_idx)
+        assert output.size()[2:] == target.size()[1:]
+        assert output.size()[1] == num_classes 
+        target = ((target).type(torch.int64)).cpu()
+        output = output.cpu()
+        print("Loss Fn Output Size: ", output.shape)
+        print("Loss Fn Target Size: ", target.shape)
+        pdb.set_trace()
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
         Loss = loss(output, target)
 #         Loss += loss(output[0], target) * 0.4
         
@@ -326,21 +384,48 @@ def _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer, loss
             Loss = loss.mean()
         Loss.backward()
         optimizer.step()
+<<<<<<< HEAD
         total_loss.update(Loss.item())
+=======
+        total_Loss.update(Loss.item())
+=======
+#         assert output[0].size()[2:] == target.size()[1:]
+#         assert output[0].size()[1] == num_classes 
+        loss = loss(output[0], target)
+        loss += loss(output[1], target) * 0.4
+        output = output[0]
+
+        if isinstance(loss, torch.nn.DataParallel):
+            loss = loss.mean()
+        loss.backward()
+        optimizer.step()
+        total_loss.update(loss.item())
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
 
         # measure elapsed time
         batch_time.update(time.time() - tic)
         tic = time.time()
 
         # LOGGING & TENSORBOARD
+<<<<<<< HEAD
 #         if batch_idx % log_step == 0:
 #             wrt_step = (epoch - 1) * len(train_loader) + batch_idx
+=======
+        if batch_idx % log_step == 0:
+            wrt_step = (epoch - 1) * len(train_loader) + batch_idx
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
 #             writer.add_scalar(f'{wrt_mode}/loss', loss.item(), wrt_step)
 
         # FOR EVAL
         seg_metrics = eval_metrics(output, target, num_classes)
+<<<<<<< HEAD
         _update_seg_metrics(*seg_metrics, total_correct, total_label, total_inter, total_union)
         pixAcc, mIoU, _ = _get_seg_metrics(total_correct, total_label, total_inter, total_union).values()
+=======
+        _update_seg_metrics(*seg_metrics)
+        pixAcc, mIoU, _ = _get_seg_metrics().values()
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
 
         # PRINT INFO
         tbar.set_description('TRAIN ({}) | Loss: {:.3f} | Acc {:.2f} mIoU {:.2f} | B {:.2f} D {:.2f} |'.format(
@@ -386,7 +471,11 @@ def _valid_epoch(model, epoch):
             total_loss.update(loss.item())
 
             seg_metrics = eval_metrics(output, target, num_classes)
+<<<<<<< HEAD
             _update_seg_metrics(*seg_metrics, total_correct, total_label, total_inter, total_union)
+=======
+            _update_seg_metrics(*seg_metrics)
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
 
             # LIST OF IMAGE TO VIZ (15 images)
             if len(val_visual) < 15:
@@ -395,7 +484,11 @@ def _valid_epoch(model, epoch):
                 val_visual.append([data[0].data.cpu(), target_np[0], output_np[0]])
 
             # PRINT INFO
+<<<<<<< HEAD
             pixAcc, mIoU, _ = _get_seg_metrics(total_correct, total_label, total_inter, total_union).values()
+=======
+            pixAcc, mIoU, _ = _get_seg_metrics().values()
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
             tbar.set_description('EVAL ({}) | Loss: {:.3f}, PixelAcc: {:.2f}, Mean IoU: {:.2f} |'.format( epoch,
                                             total_loss.average,
                                             pixAcc, mIoU))
@@ -427,31 +520,68 @@ def _valid_epoch(model, epoch):
 
     return log
 
+<<<<<<< HEAD
 
 
 # %%
 def _update_seg_metrics(correct, labeled, inter, union, total_correct, total_label, total_inter, total_union):
+=======
+def _reset_metrics():
+    batch_time = AverageMeter()
+    data_time = AverageMeter()
+    total_loss = AverageMeter()
+    total_inter, total_union = 0, 0
+    total_correct, total_label = 0, 0
+
+def _update_seg_metrics(correct, labeled, inter, union):
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
     total_correct += correct
     total_label += labeled
     total_inter += inter
     total_union += union
+<<<<<<< HEAD
     return total_correct, total_label, total_inter, total_union
 
 
 # %%
 def _get_seg_metrics(total_correct, total_label, total_inter, total_union):
     num_classes=21
+=======
+
+def _get_seg_metrics(total_correct, total_label, total_inter, total_union):
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
     pixAcc = 1.0 *total_correct / (np.spacing(1) + total_label)
     IoU = 1.0 * total_inter / (np.spacing(1) + total_union)
     mIoU = IoU.mean()
     return {
         "Pixel_Accuracy": np.round(pixAcc, 3),
         "Mean_IoU": np.round(mIoU, 3),
+<<<<<<< HEAD
         "Class_IoU": dict(zip(range(num_classes), np.array(np.round(IoU, 3))) )
+=======
+        "Class_IoU": dict(zip(range(self.num_classes), np.round(IoU, 3)))
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
     }
 
 
 # %%
+<<<<<<< HEAD
 if __name__ == '__main__':
     main(args)
 
+=======
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
+if __name__ == '__main__':
+    main(args)
+
+
+# %%
+
+
+
+
+>>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
