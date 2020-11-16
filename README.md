@@ -5,12 +5,12 @@ A Semantic Segmentation architecture developed to process Equirectangular images
 
 
 # Architecture
-```
+
 <p align='center'>
 <img src='imgs/pfa.png'>
 <img src='imgs/psp.png'>
 </p>
-```
+
 # Note
 ```
 This repo is under development and will be updated very soon. Please keep Checking the To-Do list for status of development.
