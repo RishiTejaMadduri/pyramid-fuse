@@ -87,3 +87,5 @@ class LovaszSoftmax(nn.Module):
         logits = F.softmax(output, dim=1)
         loss = lovasz_softmax(logits, target, ignore=self.ignore_index)
         return loss
+
+
