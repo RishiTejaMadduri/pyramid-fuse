@@ -1,13 +1,13 @@
 # Pyramid-fuse
 
-```
+
 A Semantic Segmentation architecture developed to process Equirectangular images. This work was done as a part of internship at Smart Viewing, UK. The input to the network is an Equirectangular RGB Image which is then converted to a cubemap representation and processed parallelly.
-```
+
 
 # Architecture
 ```
-![sample_results](imgs/pfa.png)
-![sample_results](imgs/psp.png)
+![ ](imgs/pfa.png)
+![ ](imgs/psp.png)
 ```
 # Note
 ```
