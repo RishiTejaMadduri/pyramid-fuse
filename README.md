@@ -6,8 +6,10 @@ A Semantic Segmentation architecture developed to process Equirectangular images
 
 # Architecture
 ```
-![ ](imgs/pfa.png)
-![ ](imgs/psp.png)
+<p align='center'>
+<img src='imgs/pfa.png'>
+<img src='imgs/psp.png'>
+</p>
 ```
 # Note
 ```
