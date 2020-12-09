@@ -15,9 +15,9 @@ This repository involves my work as a Computer Vision Intern at Virtual Viewing,
 Repo under active development. Will be updated very soon - 12/08/2020
 
 
-## To-Do:
-```
- - [ ] Upload Results
- - [ ] Upload Pre-Trained Model
- - [ ] Comment and Clean Code
-```
+# TODO
+- [ ] Upload results
+- [ ] Upload pre-trained model
+- [ ] Clean and Comment Code
+
+
