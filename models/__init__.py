@@ -1,1 +1,2 @@
-from . import FCRN
+from . import pyramid_fusion2
+

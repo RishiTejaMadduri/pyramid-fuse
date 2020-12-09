@@ -1,6 +1,6 @@
 *.pkl
 *.ipynb
-*.png
 *.jpeg
+*.jpg
 *.pth
 
