@@ -1,9 +1,12 @@
+import sys
+sys.path.append('/mnt/batch/tasks/shared/LS_root/mounts/clusters/objloc/code/pyramid-fuse')
 import os
 import numpy as np
 import scipy.io as sio
 import torch
 from PIL import Image
 from torch.utils import data
+from utils_seg.palette import *
 import cv2 as cv
 
 num_classes = 21
@@ -69,6 +72,7 @@ class VOC(data.Dataset):
         self.joint_transform = joint_transform
         self.sliding_crop = sliding_crop
         self.transform = transform
+        self.palette = get_voc_palette(num_classes)
         self.target_transform = target_transform
 
     def __getitem__(self, index):
@@ -81,39 +85,24 @@ class VOC(data.Dataset):
 
         img_path, mask_path = self.imgs[index]
         img = np.asarray(Image.open(img_path), dtype=np.float32)
-<<<<<<< HEAD
         img = cv.resize(img, dsize=(512, 1024), interpolation=cv.INTER_NEAREST)
-=======
-        img = cv.resize(img, dsize=(512, 1024), interpolation=cv.INTER_CUBIC)
->>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
         img=img.transpose(2,1,0)
         img=np.expand_dims(img,0)
         img = torch.tensor(img)
         if self.mode == 'train':
-<<<<<<< HEAD
             mask = np.asarray(Image.open(mask_path), dtype=np.float32)
-            mask = cv.resize(mask, dsize = (256,128), interpolation = cv.INTER_NEAREST)
-=======
-<<<<<<< HEAD
-            mask = np.asarray(Image.open(mask_path), dtype=np.float32)
-            mask = cv.resize(mask, dsize = (256,128))
->>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
+            mask = cv.resize(mask, dsize = (128, 256), interpolation = cv.INTER_NEAREST)
             mask = np.expand_dims(mask,0)
+            mask = mask.transpose(0,2,1)
             mask = torch.tensor(mask)
+
             #mask = Image.fromarray(mask.astype(np.uint8))
         else:
-            mask = Image.open(mask_path)
-            mask = cv.resize(mask, dsize = (256,128))
+            mask = np.asarray(Image.open(mask_path), dtype=np.float32)
+            mask = cv.resize(mask, dsize = (128,256), interpolation = cv.INTER_NEAREST)
+            mask = np.expand_dims(mask,0)
+            mask = mask.transpose(0,2,1)
             mask = torch.tensor(mask)
-<<<<<<< HEAD
-=======
-=======
-            mask = np.asarray(Image.open(mask_path), dtype=np.int32)
-            #mask = Image.fromarray(mask.astype(np.uint8))
-        else:
-            mask = Image.open(mask_path)
->>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
->>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
 
         if self.joint_transform is not None:
             img, mask = self.joint_transform(img, mask)

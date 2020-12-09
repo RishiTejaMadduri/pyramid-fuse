@@ -5,6 +5,7 @@ from torchvision.utils import make_grid
 from torchvision import transforms
 from utils_seg import transforms as local_transforms
 from base_trainer import *
+from base import DataPrefetcher
 from utils_seg.helpers import colorize_mask
 from utils_seg.metrics import eval_metrics, AverageMeter
 from tqdm import tqdm
@@ -17,8 +18,20 @@ class Trainer(BaseTrainer):
         super(Trainer, self).__init__(model, loss, resume, config, train_loader, val_loader, train_logger)
         self.wrt_mode, self.wrt_step = 'train_', 0
         self.log_step = 10
-        
         self.num_classes = 21
+        
+        self.restore_transform = transforms.Compose([
+            local_transforms.DeNormalize(self.train_loader.MEAN, self.train_loader.STD),
+            transforms.ToPILImage()])
+        self.viz_transform = transforms.Compose([
+            transforms.Resize((400, 400)),
+            transforms.ToTensor()])
+#         print("trans for vis")
+        if self.device ==  torch.device('cpu'): prefetch = False
+        if prefetch:
+            self.train_loader = DataPrefetcher(train_loader, device=self.device)
+            self.val_loader = DataPrefetcher(val_loader, device=self.device)
+            
 
         if self.device ==  torch.device('cpu'): prefetch = False
         torch.backends.cudnn.benchmark = True
@@ -38,19 +51,22 @@ class Trainer(BaseTrainer):
             # LOSS & OPTIMIZE
             self.optimizer.zero_grad()
             output = self.model(data)
-            target = ((target).type(torch.LongTensor)).cuda()
-            output = output.cuda()
+            target = target.cuda()
+#             output = output.cuda()
+#             target = ((target).type(torch.LongTensor)).cuda()
+#             output = output.cuda()
 #             print("Loss Fn Output Size: ", output.shape)
 #             print("Loss Fn Target Size: ", target.shape)
 #             assert output[0].size()[2:] == target.size()[1:]
 #             assert output[0].size()[1] == self.num_classes 
-            loss = self.loss(output, target)
-            
+            loss = self.loss(output[0], target)
+            loss += self.loss(output[1], target)*0.4
+            output = output[0]
             if isinstance(self.loss, torch.nn.DataParallel):
                 loss = loss.mean()
-                
-            self.optimizer.step()
+            
             loss.backward()
+            self.optimizer.step()
             self.total_loss.update(loss.item())
 
             # measure elapsed time
@@ -106,7 +122,15 @@ class Trainer(BaseTrainer):
                 #data, target = data.to(self.device), target.to(self.device)
                 # LOSS
                 output = self.model(data)
-                loss = self.loss(output, target)
+#                 target = target.permute(0, 2, 1).cuda()
+#                 output = output.cuda()
+                target = target.cuda()
+#                 target = ((target).type(torch.LongTensor)).cuda()
+#                 output = output.cuda()                
+                
+                loss = self.loss(output[0], target)
+                loss += self.loss(output[1], target)*0.4
+                output = output[0]
                 if isinstance(self.loss, torch.nn.DataParallel):
                     loss = loss.mean()
                 self.total_loss.update(loss.item())

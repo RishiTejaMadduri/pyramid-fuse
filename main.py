@@ -115,7 +115,6 @@ def get_available_devices(logger, n_gpu):
 # %%
 
 def main(args):
-    
     logger = Logger()
 #     train_loader = VOC(args.path, args.batch_size, 'train')
     train_loader = VOC("train")
@@ -191,15 +190,8 @@ def main(args):
     for epoch in range(start_epoch, epoch+1):
         # RUN TRAIN (AND VAL)
         #pdb.set_trace()
-<<<<<<< HEAD
         results = _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer, loss)
-=======
-<<<<<<< HEAD
-        results = _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer, loss)
-=======
-        results = _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer)
->>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
->>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
+
         if do_validation and epoch % args.val_per_epoch == 0:
             results = _valid_epoch(model, epoch)
 
@@ -285,7 +277,7 @@ def _resume_checkpoint(resume_path):
 
 
 # %%
-<<<<<<< HEAD
+
 def _reset_metrics():
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -296,15 +288,7 @@ def _reset_metrics():
 
 # %%
 def _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer, loss):
-=======
 
-
-<<<<<<< HEAD
-def _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer, loss):
-=======
-def _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer):
->>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
->>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
 #     logger.info('\n')
     model.train()
     wrt_mode = 'train'
@@ -328,22 +312,13 @@ def _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer):
         # LOSS & OPTIMIZE
         optimizer.zero_grad()
         output = model(data)
-        print(batch_idx)
         assert output.size()[2:] == target.size()[1:]
         assert output.size()[1] == num_classes 
-<<<<<<< HEAD
         target = ((target).type(torch.int64)).cuda()
         output = output.cuda()
         print("Loss Fn Output Size: ", output.shape)
         print("Loss Fn Target Size: ", target.shape)
 #         pdb.set_trace()
-=======
-        target = ((target).type(torch.int64)).cpu()
-        output = output.cpu()
-        print("Loss Fn Output Size: ", output.shape)
-        print("Loss Fn Target Size: ", target.shape)
-        pdb.set_trace()
->>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
         Loss = loss(output, target)
 #         Loss += loss(output[0], target) * 0.4
         
@@ -352,24 +327,18 @@ def _train_epoch(model,epoch, num_classes, train_loader, logger, optimizer):
             Loss = loss.mean()
         Loss.backward()
         optimizer.step()
-<<<<<<< HEAD
         total_loss.update(Loss.item())
-=======
-        total_Loss.update(Loss.item())
->>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
+
 
         # measure elapsed time
         batch_time.update(time.time() - tic)
         tic = time.time()
 
         # LOGGING & TENSORBOARD
-<<<<<<< HEAD
-#         if batch_idx % log_step == 0:
-#             wrt_step = (epoch - 1) * len(train_loader) + batch_idx
-=======
+
         if batch_idx % log_step == 0:
             wrt_step = (epoch - 1) * len(train_loader) + batch_idx
->>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
+
 #             writer.add_scalar(f'{wrt_mode}/loss', loss.item(), wrt_step)
 
         # FOR EVAL
@@ -486,24 +455,8 @@ def _get_seg_metrics(total_correct, total_label, total_inter, total_union):
     }
 
 
-# %%
-<<<<<<< HEAD
+
+
+
 if __name__ == '__main__':
     main(args)
-
-=======
-<<<<<<< HEAD
-=======
-
-
->>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
-if __name__ == '__main__':
-    main(args)
-
-
-# %%
-
-
-
-
->>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6

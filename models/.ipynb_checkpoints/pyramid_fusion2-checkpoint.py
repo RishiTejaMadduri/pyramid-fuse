@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 # %%
+
+# %%
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,201 +10,131 @@ import torchvision.models
 import collections
 import math
 import sys
-sys.path.append("/mnt/batch/tasks/shared/LS_root/mounts/clusters/objloc/code/pyramid-fuse")
+sys.path.append("/mnt/batch/tasks/shared/LS_root/mounts/clusters/pyfuse/code/pyramid-fuse")
 # sys.setrecursionlimit(10000000)
 import Utils
 from Utils.CubePad import CustomPad
+from utils_seg.helpers import initialize_weights
 import numpy as np
 
-# %%
-pre_trained = torch.load("BiFuse_Pretrained.pkl")
-
 
 # %%
-class Unpool(nn.Module):
-    # Unpool: 2*2 unpooling with zero padding
-    def __init__(self, num_channels, stride=2):
-        super(Unpool, self).__init__()
-
-        self.num_channels = num_channels
-        self.stride = stride
-
-        # create kernel [1, 0; 0, 0]
-        # currently not compatible with running on CPU
-        self.weights = torch.autograd.Variable(
-            torch.zeros(num_channels, 1, stride, stride))
-        self.weights[:, :, 0, 0] = 1
-
-    def forward(self, x):
-        return F.conv_transpose2d(x, self.weights.cuda(), stride=self.stride, groups=self.num_channels)
+def weights_init(m):
+#     print(m)
+    # Initialize filters with Gaussian random weights
+    if isinstance(m, nn.Conv2d):
+        n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+        m.weight.data.normal_(0, math.sqrt(2. / n))
+        if m.bias is not None:
+            m.bias.data.zero_()
+    elif isinstance(m, nn.ConvTranspose2d):
+        n = m.kernel_size[0] * m.kernel_size[1] * m.in_channels
+        m.weight.data.normal_(0, math.sqrt(2. / n))
+        if m.bias is not None:
+            m.bias.data.zero_()
+    elif isinstance(m, nn.BatchNorm2d):
+        m.weight.data.fill_(1)
+        m.bias.data.zero_()
 
 
 # %%
-class Decoder(nn.Module):
-    # Decoder is the base class for all decoders
-
-    names = ['pyramid1', 'pyramid2', 'pyramid3', 'pyramid4']
-
-    def __init__(self):
-        super(Decoder, self).__init__()
-
-        self.layer1 = None
-        self.layer2 = None
-        self.layer3 = None
-        self.layer4 = None
-
-    def forward(self, x):
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
-        return x
-
-
-# %%
-
-
-class PSPModule(nn.Module):
-    def __init__(self, features, out_features=1024, sizes=(1, 2, 3, 6)):
-        super().__init__()
-        self.stages = []
-        self.stages = nn.ModuleList([self._make_stage(features, size) for size in sizes])
-        self.bottleneck = nn.Conv2d(features * (len(sizes) + 1), out_features, kernel_size=1)
-        self.relu = nn.ReLU()
-
-    def _make_stage(self, features, size):
-        prior = nn.AdaptiveAvgPool2d(output_size=(size, size))
-        conv = nn.Conv2d(features, features, kernel_size=1, bias=False)
-        return nn.Sequential(prior, conv)
-
-    def forward(self, feats):
-        h, w = feats.size(2), feats.size(3)
-        priors = [F.upsample(input=stage(feats), size=(h, w), mode='bilinear') for stage in self.stages] + [feats]
-        bottle = self.bottleneck(torch.cat(priors, 1))
-        return self.relu(bottle)
-
-
-# %%
-
-
-class PSPUpsample(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super().__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, 3, padding=1),
-            nn.BatchNorm2d(out_channels),
-            nn.PReLU()
+class _PSPModule(nn.Module):
+    def __init__(self, in_channels, bin_sizes, norm_layer):
+        super(_PSPModule, self).__init__()
+        out_channels = in_channels // len(bin_sizes)
+        self.stages = nn.ModuleList([self._make_stages(in_channels, out_channels, b_s, norm_layer) 
+                                                        for b_s in bin_sizes])
+        self.bottleneck = nn.Sequential(
+            nn.Conv2d(in_channels+(out_channels * len(bin_sizes)), out_channels, 
+                                    kernel_size=3, padding=1, bias=False),
+            norm_layer(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Dropout2d(0.1)
         )
 
-    def forward(self, x):
-        h, w = 2 * x.size(2), 2 * x.size(3)
-        p = F.upsample(input=x, size=(h, w), mode='bilinear')
-        return self.conv(p)
+    def _make_stages(self, in_channels, out_channels, bin_sz, norm_layer):
+        prior = nn.AdaptiveAvgPool2d(output_size=bin_sz)
+        conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
+        bn = norm_layer(out_channels)
+        relu = nn.ReLU(inplace=True)
+        return nn.Sequential(prior, conv, bn, relu)
+    
+    def forward(self, features):
+        h, w = features.size()[2], features.size()[3]
+        pyramids = [features]
+        pyramids.extend([F.interpolate(stage(features), size=(h, w), mode='bilinear', 
+                                        align_corners=True) for stage in self.stages])
+        output = self.bottleneck(torch.cat(pyramids, dim=1))
+        return output
 
 
 # %%
-
-
 class PSPNet(nn.Module):
-    def __init__(self, n_classes=21, sizes=(1, 2, 3, 6), psp_size=1024, deep_features_size=1024):
-        super().__init__()
-        self.psp = PSPModule(psp_size, 1024, sizes)
-        self.drop_1 = nn.Dropout2d(p=0.3)
+    def __init__(self, num_classes=21, use_aux=True):
+        super(PSPNet, self).__init__()
+        # TODO: Use synch batchnorm
+        norm_layer = nn.InstanceNorm2d
+#         model = getattr(resnet, backbone)(pretrained, norm_layer=norm_layer, )
+#         m_out_sz = model.fc.in_features
+        self.use_aux = use_aux 
 
-        self.up_1 = PSPUpsample(1024, 256)
-        self.up_2 = PSPUpsample(256, 64)
-        self.up_3 = PSPUpsample(64, 64)
+#         self.initial = nn.Sequential(*list(model.children())[:4])
+#         if in_channels != 3:
+#             self.initial[0] = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
+#         self.initial = nn.Sequential(*self.initial)
+        
+#         self.layer1 = model.layer1
+#         self.layer2 = model.layer2
+#         self.layer3 = model.layer3
+#         self.layer4 = model.layer4
 
-        self.drop_2 = nn.Dropout2d(p=0.15)
-        self.final = nn.Sequential(
-            nn.Conv2d(64, n_classes, kernel_size=1),
-            nn.LogSoftmax()
+        self.master_branch = nn.Sequential(
+            _PSPModule(1024, bin_sizes=[1, 2, 3, 6], norm_layer=norm_layer),
+            nn.Conv2d(1024//4, num_classes, kernel_size=1)
         )
 
-        self.classifier = nn.Sequential(
-            nn.Linear(deep_features_size, 256),
-            nn.ReLU(),
-            nn.Linear(256, n_classes)
+        self.auxiliary_branch = nn.Sequential(
+            nn.Conv2d(1024, 1024//2, kernel_size=3, padding=1, bias=False),
+            norm_layer(1024//2),
+            nn.ReLU(inplace=True),
+            nn.Dropout2d(0.1),
+            nn.Conv2d(1024//2, num_classes, kernel_size=1)
         )
+        initialize_weights(self.master_branch, self.auxiliary_branch)
+#         if freeze_bn: self.freeze_bn()
+#         if freeze_backbone: 
+#             set_trainable([self.initial, self.layer1, self.layer2, self.layer3, self.layer4], False)
 
+#Equi - [bs, [128, 256]
+#cubemap [64, 64]
     def forward(self, x):
-#         print(x.shape)
-        f = x
-        class_f = x
-        p = self.psp(f)
-        p = self.drop_1(p)
+#         input_size = (128, 256)
+#         if x.shape[0]%6==0:
+#             input_size = (8*x.size()[2], 8*x.size()[3])
+        input_size = (512, 1024)
+#         print("PSP Input: ", x.shape)
+        if x.shape[0]%6==0:
+            input_size = (32*x.size()[2], 32*x.size()[3])
+#         x = self.initial(x)
+#         x = self.layer1(x)
+#         x = self.layer2(x)
+#         x_aux = self.layer3(x)
+#         x = self.layer4(x_aux)
+        x_aux = x
+        output = self.master_branch(x)
+        output = F.interpolate(output, size=input_size, mode='bilinear')
+        output = output[:, :, :input_size[0], :input_size[1]]
 
-        p = self.up_1(p)
-        p = self.drop_2(p)
-
-        p = self.up_2(p)
-        p = self.drop_2(p)
-
-        p = self.up_3(p)
-        p = self.drop_2(p)
-
-        auxiliary = F.adaptive_max_pool2d(input=class_f, output_size=(1, 1)).view(-1, class_f.size(1))
-   
-        return self.final(p), self.classifier(auxiliary)
-
-
-# %%
-#Using this
-class UpProj(Decoder):
-    # UpProj decoder consists of 4 upproj modules with decreasing number of channels and increasing feature map size
-
-    class UpProjModule(nn.Module):
-        # UpProj module has two branches, with a Unpool at the start and a ReLu at the end
-        #   upper branch: 5*5 conv -> batchnorm -> ReLU -> 3*3 conv -> batchnorm
-        #   bottom branch: 5*5 conv -> batchnorm
-
-        def __init__(self, in_channels, out_channels=None, padding=None):
-            super(UpProj.UpProjModule, self).__init__()
-            if out_channels is None:
-                out_channels = in_channels//2
-            self.pad_3 = padding(1)
-            self.pad_5 = padding(2)
-
-            self.unpool = Unpool(in_channels)
-            self.upper_branch = nn.Sequential(collections.OrderedDict([
-                ('pad1', CustomPad(self.pad_5)),
-                ('conv1',      nn.Conv2d(in_channels, out_channels,
-                                         kernel_size=5, stride=1, padding=0, bias=False)),
-                ('batchnorm1', nn.BatchNorm2d(out_channels)),
-                ('relu',      nn.ReLU()),
-                ('pad2', CustomPad(self.pad_3)),
-                ('conv2',      nn.Conv2d(out_channels, out_channels,
-                                         kernel_size=3, stride=1, padding=0, bias=False)),
-                ('batchnorm2', nn.BatchNorm2d(out_channels)),
-            ]))
-            self.bottom_branch = nn.Sequential(collections.OrderedDict([
-                ('pad', CustomPad(self.pad_5)),
-                ('conv',      nn.Conv2d(in_channels, out_channels,
-                                        kernel_size=5, stride=1, padding=0, bias=False)),
-                ('batchnorm', nn.BatchNorm2d(out_channels)),
-            ]))
-            self.relu = nn.ReLU()
-            s
-        def forward(self, x):
-            x = self.unpool(x)
-            x1 = self.upper_branch(x)
-            x2 = self.bottom_branch(x)
-            x = x1 + x2
-            x = self.relu(x)
-            return x
-
-    def __init__(self, in_channels, padding):
-        super(UpProj, self).__init__()
-        self.padding = getattr(Utils.CubePad, padding)
-        self.layer1 = self.UpProjModule(in_channels   , padding=self.padding)
-        self.layer2 = self.UpProjModule(in_channels//2, padding=self.padding)
-        self.layer3 = self.UpProjModule(in_channels//4, padding=self.padding)
-        self.layer4 = self.UpProjModule(in_channels//8, padding=self.padding)
+        if self.training and self.use_aux:
+            aux = self.auxiliary_branch(x_aux)
+            aux = F.interpolate(aux, size=input_size, mode='bilinear')
+            aux = aux[:, :, :input_size[0], :input_size[1]]
+            return output
+        print("PSP Output:", output.shape)
+        return output
 
 
 # %%
-
-
 def e2c(equirectangular):
     cube = Utils.Equirec2Cube.ToCubeTensor(equirectangular.cuda())
     return cube
@@ -354,6 +286,7 @@ class CETransform(nn.Module):
         return self.e2c[key].ToCubeTensor(x)
 
     def C2E(self, x):
+#         print(x.shape)
         [bs, c, h, w] = x.shape
         key = '(%d)' % (h)
         assert key in self.c2e and h == w
@@ -368,7 +301,7 @@ class Refine(nn.Module):
     def __init__(self):
         super(Refine, self).__init__()
         self.refine_1 = nn.Sequential(
-                        nn.Conv2d(42, 32, kernel_size=3, stride=1, padding=1, bias=False),
+                        nn.Conv2d(45, 32, kernel_size=3, stride=1, padding=1, bias=False),
                         nn.BatchNorm2d(32),
                         nn.ReLU(inplace=True),
                         nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1, bias=False),
@@ -397,40 +330,24 @@ class Refine(nn.Module):
                         nn.LeakyReLU(inplace=True),
                         )
         self.refine_3 = nn.Sequential(
-                        nn.Conv2d(96, 32, kernel_size=3, stride=1, padding=1, bias=False),
-                        nn.BatchNorm2d(32),
+                        nn.Conv2d(96, 16, kernel_size=3, stride=1, padding=1, bias=False),
+                        nn.BatchNorm2d(16),
                         nn.ReLU(inplace=True),
-                        nn.Conv2d(32, 21, kernel_size=3, stride=1, padding=1, bias=False)
+                        nn.Conv2d(16, 21, kernel_size=3, stride=1, padding=1, bias=False)
                         )
-        self.bilinear_1 = nn.UpsamplingBilinear2d(size=(64,128))
-        self.bilinear_2 = nn.UpsamplingBilinear2d(size=(128,256))
+        self.bilinear_1 = nn.UpsamplingBilinear2d(size=(256,512))
+        self.bilinear_2 = nn.UpsamplingBilinear2d(size=(512,1024))
     def forward(self, inputs):
         x = inputs
-#         print("\n Entering Refine Model \n")
-#         print("X_Shape: ", x.shape)
-        
         out_1 = self.refine_1(x)
-#         print("out_1_Shape: ", out_1.shape)
-        
         out_2 = self.refine_2(out_1)
-#         print("Out_2_Shape: ", out_2.shape)
-        
         deconv_out1 = self.deconv_1(out_2)
-#         print("Deconv_out1_Shape: ", deconv_out1.shape)
-        
         up_1 = self.bilinear_1(out_2)
-#         print("up1_Shape: ", up_1.shape)
-        
         deconv_out2 = self.deconv_2(torch.cat((deconv_out1, up_1), dim = 1))
-#         print("Deconv_out2_Shape: ", deconv_out2.shape)
-        
         up_2 = self.bilinear_2(out_1)
-#         print("Up_2_Shape: ", up_2.shape)
-        
         out_3 = self.refine_3(torch.cat((deconv_out2, up_2), dim = 1))
-#         print("out_3_Shape: ", out_3.shape)
 
-        return out_3  
+        return out_3                
 
 
 # %%
@@ -441,11 +358,12 @@ class PyFuse(nn.Module):
 #Initializing the models
         self.equi_model = fusion_ResNet(
             bs, layers, (512, 1024), 3, pretrained, padding='ZeroPad')
-        print(self.equi_model)
         self.cube_model = fusion_ResNet(
             bs*6, layers, (256, 256), 3, pretrained, padding='SpherePad')
         self.equi_psp = PSPNet()
         self.cube_psp = PSPNet()
+#         self.equi_psp.apply(weights_init)
+#         self.cube_psp.apply(weights_init)
 #Initializing the refine module
         self.refine_model = Refine()
 
@@ -510,18 +428,24 @@ class PyFuse(nn.Module):
         self.grid = Utils.Equirec2Cube(None, 512, 1024, 256, 90).GetGrid()
 
 #Forwarard for FCRN
-    def forward(self, equi, fusion=False):
+    def forward(self, equi, fusion=True):
+        
+#         print("Input to network: ", equi.shape)
+#         equi = equi.permute(0, 1, 3, 2)
+
 #going from E2C
         cube = self.ce.E2C(equi)
+#         print("Cube E2C(equi): ", cube.shape)
 #Applying the pre-processing block to deal with distortion
         feat_equi = self.equi_model.pre_encoder2(equi)
+
 #Check this one out
         feat_cube = self.cube_model.pre_encoder(cube)
-#         print("Equi_shape: ", equi.shape)
-        print("Pyramid encoder input-Equi:", feat_equi.shape)
-        print("Pyramid encoder input-Cube:", feat_cube.shape)
-        
 
+
+#         print("Pyramid encoder input-Equi:", feat_equi.shape)
+#         print("Pyramid encoder input-Cube:", feat_cube.shape)
+        
 #Running the encoder block
         for e in range(5):
             if fusion:
@@ -546,25 +470,28 @@ class PyFuse(nn.Module):
                 feat_cube = self.cube_model.bn2(feat_cube)
                 feat_equi = self.equi_model.bn2(feat_equi)
                 
-#         print("Pyramid encoder exit-Equi:", feat_equi.shape)
+        print("Pyramid encoder exit-Equi:", feat_equi.shape)
 #         print("Pyramid encoder exit-Cube:", feat_cube.shape)
         
         feat_equi = self.equi_psp(feat_equi)
-        feat_equi = feat_equi[0]
+#         feat_equi = feat_equi[0]
         feat_cube = self.cube_psp(feat_cube)
-        feat_cube = feat_cube[0]
+#         feat_cube = feat_cube[0]
          
 #         print("Pyramid decoder exit-Equi:", feat_equi.shape)
 #         print("Pyramid decoder exit-Cube:", feat_cube.shape)
         
         feat_cube = self.ce.C2E(feat_cube)
-        feat_cat = torch.cat((feat_equi, feat_cube), dim = 1)
+#         feat_cat = torch.cat((equi, feat_equi, feat_cube), dim = 1)
         
 #         print("\n C2E and Cat shapes \n")
 #         print("C2E-Cube: ", feat_cube.shape)
 #         print("Cat: ", feat_cat.shape)
         
-        refine_final = self.refine_model(feat_cat)
+#         refine_final = self.refine_model(feat_cat)
         
-        return refine_final
+#         print("Pyfuse output: ", refine_final.shape)
+#         return refine_final
+        output = [feat_equi.cuda(), feat_cube.cuda()]
+        return output
 

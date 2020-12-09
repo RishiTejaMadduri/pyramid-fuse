@@ -23,11 +23,11 @@ from imageio import imwrite
 from utils_seg import Logger
 from utils_seg import helpers
 from utils_seg.losses import *
-# from dataloaders.voc import VOC
-from dataloaders.voc1 import VOC
+# from dataloaders.stanford2d3d import VOC
+from dataloaders.voc import VOC
 from torchvision import transforms
 from torchvision.utils import make_grid
-from models.pyramid_fusion import PyFuse
+from models.pyramid_fusion2 import PyFuse
 from utils_seg.helpers import colorize_mask
 from torch.utils.tensorboard import SummaryWriter
 from utils_seg import transforms as local_transforms
@@ -49,10 +49,16 @@ def get_instance(module, name, config, *args):
 def main(config, resume):
     train_logger = Logger()
     # DATA LOADERS
-    train_loader = VOC("train")
-    val_loader = VOC("val")
+    data_dir = '/mnt/batch/tasks/shared/LS_root/mounts/clusters/pyfuse/code/datasets/VOC/'
+    train_loader = VOC(data_dir, 2, 'train')
+#     print(train_loader)
+    val_loader = VOC(data_dir, 2, 'val')
+#     train_loader = VOC("train")
+#     val_loader = VOC("val")
     # MODEL
-    model = PyFuse(50)
+    model = PyFuse(152)
+#     params = torch.load('./models/params.pkl')
+#     model.load_state_dict(params, strict = False)
 #     print(f'\n{model}\n')
     # LOSS
     loss = CrossEntropyLoss2d()

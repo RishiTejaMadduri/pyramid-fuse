@@ -2,7 +2,7 @@
 # https://github.com/kazuto1011/deeplab-pytorch
 
 import sys
-sys.path.append('/mnt/batch/tasks/shared/LS_root/mounts/clusters/pyfuse/code/pyramid-fuse')
+sys.path.append('/mnt/batch/tasks/shared/LS_root/mounts/clusters/objloc/code/pyramid-fuse')
 from base import BaseDataSet, BaseDataLoader
 from utils_seg import palette
 import numpy as np
@@ -23,6 +23,7 @@ class VOCDataset(BaseDataSet):
         self.num_classes = 21
         self.palette = palette.get_voc_palette(self.num_classes)
         super(VOCDataset, self).__init__(**kwargs)
+#         print("In VOC_DataSet")
 
     def _set_files(self):
         self.root = os.path.join(self.root, 'VOCdevkit/VOC2012')
@@ -37,15 +38,12 @@ class VOCDataset(BaseDataSet):
         image_id = self.files[index]
         image_path = os.path.join(self.image_dir, image_id + '.jpg')
         label_path = os.path.join(self.label_dir, image_id + '.png')
-        print("Image path:", image_path)
-        print("Label path:", label_path)
         image = np.asarray(Image.open(image_path), dtype=np.float32)
-        image = cv.resize(image, dsize=(1024, 512), interpolation=cv.INTER_NEAREST)
-#         image = image.transpose(2,1,0)
-        print("Image: ", image.shape)
+        image = cv.resize(image, dsize=(512, 1024), interpolation=cv.INTER_NEAREST)
+#         print("Image: ", image.shape)
         label = np.asarray(Image.open(label_path), dtype=np.int32)
-        label = cv.resize(label, dsize = (1024, 512), interpolation = cv.INTER_NEAREST)
-        print("Label: ", label.shape)
+        label = cv.resize(label, dsize = (128, 256), interpolation = cv.INTER_NEAREST)
+#         print("Label: ", label.shape)
         image_id = self.files[index].split("/")[-1].split(".")[0]
         return image, label, image_id
 
@@ -79,7 +77,7 @@ class VOCAugDataset(BaseDataSet):
 class VOC(BaseDataLoader):
     def __init__(self, data_dir, batch_size, split, crop_size=None, base_size=None, scale=True, num_workers=0, val=False,
                     shuffle=False, flip=False, rotate=False, blur= False, augment=False, val_split= None, return_id=False):
-        
+#         print("In VOC")
         self.MEAN = [0.45734706, 0.43338275, 0.40058118]
         self.STD = [0.23965294, 0.23532275, 0.2398498]
 

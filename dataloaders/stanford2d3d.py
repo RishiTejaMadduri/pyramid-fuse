@@ -25,20 +25,23 @@ class VOCDataset(BaseDataSet):
         super(VOCDataset, self).__init__(**kwargs)
 
     def _set_files(self):
-        self.root = os.path.join(self.root, 'VOCdevkit/VOC2012')
+        self.root = os.path.join(self.root, 'stanford2d3d/indoor_pano')
         self.image_dir = os.path.join(self.root, 'JPEGImages')
         self.label_dir = os.path.join(self.root, 'SegmentationClass')
 
         file_list = os.path.join(self.root, "ImageSets/Segmentation", self.split + ".txt")
         self.files = [line.rstrip() for line in tuple(open(file_list, "r"))]
+        
+        label_list = os.path.join(self.root, "ImageSets/Segmentation/" + "label.txt")
+        self.labels = [line.rstrip() for line in tuple(open(label_list, "r"))]
     
     def _load_data(self, index):
         #print("Inside VOCdataset")
         image_id = self.files[index]
-        image_path = os.path.join(self.image_dir, image_id + '.jpg')
-        label_path = os.path.join(self.label_dir, image_id + '.png')
-        print("Image path:", image_path)
-        print("Label path:", label_path)
+        label_id = self.labels[index]
+        
+        image_path = os.path.join(self.image_dir, image_id + '.png')
+        label_path = os.path.join(self.label_dir, label_id + '_frame_equirectangular_domain_semantic_pretty.png')
         image = np.asarray(Image.open(image_path), dtype=np.float32)
         image = cv.resize(image, dsize=(1024, 512), interpolation=cv.INTER_NEAREST)
 #         image = image.transpose(2,1,0)

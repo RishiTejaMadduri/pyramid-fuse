@@ -1,6 +1,6 @@
 {
     "name": "PSP",
-    "n_gpu": 1,
+    "n_gpu": 2,
     "use_synch_bn": true,
 
     "arch": {
@@ -15,8 +15,8 @@
     "train_loader": {
         "type": "VOC",
         "args":{
-            "data_dir": "/mnt/batch/tasks/shared/LS_root/mounts/clusters/objloc/code/datasets/VOC/",
-            "batch_size": 8,
+            "data_dir": "/mnt/batch/tasks/shared/LS_root/mounts/clusters/pyfuse/code/datasets/VOC/",
+            "batch_size": 1,
             "base_size": 400,
             "crop_size": 380,
             "augment": true,
@@ -26,15 +26,15 @@
             "rotate": true,
             "blur": false,
             "split": "train",
-            "num_workers": 8
+            "num_workers": 1
         }
     },
 
     "val_loader": {
         "type": "VOC",
         "args":{
-            "data_dir": "/mnt/batch/tasks/shared/LS_root/mounts/clusters/objloc/code/datasets/VOC/",
-            "batch_size": 8,
+            "data_dir": "/mnt/batch/tasks/shared/LS_root/mounts/clusters/pyfuse/code/datasets/VOC/",
+            "batch_size": 4,
             "crop_size": 480,
             "val": true,
             "split": "val",
@@ -60,18 +60,18 @@
     },
 
     "trainer": {
-        "epochs": 80,
-        "save_dir": "/mnt/batch/tasks/shared/LS_root/mounts/clusters/objloc/code/pytorch_segmentation/saved/",
+        "epochs": 200,
+        "save_dir": "/mnt/batch/tasks/shared/LS_root/mounts/clusters/pyfuse/code/pytorch_segmentation/saved/",
         "save_period": 10,
   
         "monitor": "max Mean_IoU",
-        "early_stop": 10,
+        "early_stop": 200,
         
         "tensorboard": true,
         "log_dir": "saved/runs",
         "log_per_iter": 20,
 
         "val": true,
-        "val_per_epochs": 5
+        "val_per_epochs": 10
     }
 }

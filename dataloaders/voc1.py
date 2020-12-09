@@ -1,9 +1,12 @@
+import sys
+sys.path.append('/mnt/batch/tasks/shared/LS_root/mounts/clusters/objloc/code/pyramid-fuse')
 import os
 import numpy as np
 import scipy.io as sio
 import torch
 from PIL import Image
 from torch.utils import data
+from utils_seg.palette import *
 import cv2 as cv
 
 num_classes = 21
@@ -69,6 +72,7 @@ class VOC(data.Dataset):
         self.joint_transform = joint_transform
         self.sliding_crop = sliding_crop
         self.transform = transform
+        self.palette = get_voc_palette(num_classes)
         self.target_transform = target_transform
 
     def __getitem__(self, index):
@@ -87,17 +91,17 @@ class VOC(data.Dataset):
         img = torch.tensor(img)
         if self.mode == 'train':
             mask = np.asarray(Image.open(mask_path), dtype=np.float32)
-<<<<<<< HEAD
-            mask = cv.resize(mask, dsize = (256,128), interpolation = cv.INTER_NEAREST)
-=======
-            mask = cv.resize(mask, dsize = (256,128))
->>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
+            mask = cv.resize(mask, dsize = (128, 256), interpolation = cv.INTER_NEAREST)
             mask = np.expand_dims(mask,0)
+            mask = mask.transpose(0,2,1)
             mask = torch.tensor(mask)
+
             #mask = Image.fromarray(mask.astype(np.uint8))
         else:
-            mask = Image.open(mask_path)
-            mask = cv.resize(mask, dsize = (256,128))
+            mask = np.asarray(Image.open(mask_path), dtype=np.float32)
+            mask = cv.resize(mask, dsize = (128,256), interpolation = cv.INTER_NEAREST)
+            mask = np.expand_dims(mask,0)
+            mask = mask.transpose(0,2,1)
             mask = torch.tensor(mask)
 
         if self.joint_transform is not None:

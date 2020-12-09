@@ -170,15 +170,7 @@ class Cube2Equirec(object):
 
     # Convert cubic images to equirectangular
     def _ToEquirec(self, batch, mode):
-<<<<<<< HEAD
         [batch_size, ch, H, W] = batch.shape
-=======
-<<<<<<< HEAD
-        [batch_size, ch, H, W] = batch.shape
-=======
-        batch_size, ch, H, W = batch.shape
->>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
->>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
         if batch_size != 6:
             raise ValueError("Batch size mismatch!!")
 
@@ -218,15 +210,7 @@ class Cube2Equirec(object):
     def ToEquirecTensor(self, batch, mode='bilinear'):
         # Check whether batch size is 6x
         assert mode in ['nearest', 'bilinear']
-<<<<<<< HEAD
         batch_size = batch.shape[0]
-=======
-<<<<<<< HEAD
-        batch_size = batch.shape[0]
-=======
-        batch_size = batch[0].shape[0]
->>>>>>> 4b9378a541d42936800aeb02a24990d2ef4d1350
->>>>>>> bc52ed36a836d5e0305de2b8c07e34703d4d37d6
         if batch_size % 6 != 0:
             raise ValueError("Batch size should be 6x")
 

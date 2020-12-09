@@ -356,6 +356,7 @@ def lstm_forward(bilstm_list, CE, feat_equi, feat_cube, idx, max_iters=3):
 class Refine(nn.Module):
     def __init__(self):
         super(Refine, self).__init__()
+        #RGB [1]
         self.refine_1 = nn.Sequential(
                         nn.Conv2d(5, 32, kernel_size=3, stride=1, padding=1, bias=False),
                         nn.BatchNorm2d(32),
